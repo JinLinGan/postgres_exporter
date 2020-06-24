@@ -339,6 +339,14 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		true,
 		0,
 	},
+	"pg_database":{
+		map[string]ColumnMapping{
+			"datname":      {LABEL, "OID of a database", nil,nil},
+			"xid_age":      {COUNTER, "Age of maximum frozen xid", nil,nil},
+		},
+		true,
+		0,
+	},
 }
 
 // OverrideQuery 's are run in-place of simple namespace look ups, and provide
@@ -457,6 +465,17 @@ var queryOverrides = map[string][]OverrideQuery{
 				COALESCE(count(*),0) AS count,
 				COALESCE(MAX(EXTRACT(EPOCH FROM now() - xact_start))::float,0) AS max_tx_duration
 			FROM pg_stat_activity GROUP BY datname
+			`,
+		},
+	},
+	"pg_database":{
+		{
+			semver.MustParseRange(">=0.0.0"),
+			`
+			SELECT 
+				datname,
+				age(datfrozenxid) as xid_age
+			FROM pg_database
 			`,
 		},
 	},
